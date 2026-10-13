@@ -36,21 +36,34 @@ router.get("/", async (req, res, next) => {
     const querySchema = z.object({
       page: z.coerce.number().int().min(1).default(1),
       limit: z.coerce.number().int().min(1).max(100).default(10),
+      search: z.string().trim().max(100).optional(),
+      stockStatus: z.enum(["out"]).optional(),
+      sortBy: z.enum(["nombre", "precio", "createdAt"]).default("createdAt"),
+      sortOrder: z.enum(["asc", "desc"]).default("asc"),
     });
 
     const resultado = querySchema.safeParse(req.query);
 
     if (!resultado.success) {
       res.status(400).json({
-        message: "Parámetros de paginación inválidos",
+        message: "Parámetros de consulta inválidos",
         errors: resultado.error.issues,
       });
       return;
     }
 
-    const { page, limit } = resultado.data;
+    const { page, limit, search, stockStatus, sortBy, sortOrder } =
+      resultado.data;
 
-    const productos = await listarProductos(page, limit);
+    const productos = await listarProductos(
+      page,
+      limit,
+      search,
+      stockStatus,
+      sortBy,
+      sortOrder,
+    );
+
     res.status(200).json(productos);
   } catch (error) {
     next(error);

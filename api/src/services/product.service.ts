@@ -1,5 +1,6 @@
+import { treeifyError } from "zod/v4/core";
 import { prisma } from "../lib/prisma.js";
-
+import { Prisma } from "@prisma/client";
 export interface CrearProductoDTO {
   nombre: string;
   sku: string;
@@ -18,10 +19,37 @@ export interface ActualizarProductoDTO {
   stockMinimo?: number | undefined;
 }
 
-export async function listarProductos(page = 1, limit = 10) {
+export async function listarProductos(
+  page = 1,
+  limit = 10,
+  search?: string,
+  stockStatus?: "low" | "out",
+  sortBy: "nombre" | "precio" | "createdAt" = "createdAt",
+  sortOrder: "asc" | "desc" = "asc",
+) {
   const skip = (page - 1) * limit;
-  const where = {
+
+  const where: Prisma.ProductoWhereInput = {
     activo: true,
+    ...(search && {
+      OR: [
+        {
+          nombre: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          sku: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+      ],
+    }),
+    ...(stockStatus === "out" && {
+      stock: 0,
+    }),
   };
 
   const [productos, total] = await Promise.all([
@@ -30,7 +58,7 @@ export async function listarProductos(page = 1, limit = 10) {
       skip,
       take: limit,
       orderBy: {
-        createdAt: "desc",
+        [sortBy]: sortOrder,
       },
     }),
     prisma.producto.count({
