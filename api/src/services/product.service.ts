@@ -18,15 +18,38 @@ export interface ActualizarProductoDTO {
   stockMinimo?: number | undefined;
 }
 
-export async function listarProductos() {
-  return prisma.producto.findMany({
-    where: {
-      activo: true,
+export async function listarProductos(page = 1, limit = 10) {
+  const skip = (page - 1) * limit;
+  const where = {
+    activo: true,
+  };
+
+  const [productos, total] = await Promise.all([
+    prisma.producto.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
+    prisma.producto.count({
+      where,
+    }),
+  ]);
+
+  const totalPage = Math.ceil(total / limit);
+  return {
+    data: productos,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPage,
+      hasNextPage: page < totalPage,
+      hasPreviousPage: page > 1,
     },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  };
 }
 
 export async function crearProducto(data: CrearProductoDTO) {

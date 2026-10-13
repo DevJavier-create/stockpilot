@@ -31,10 +31,27 @@ const actualizarProductoSchema = z
   })
   .strict();
 
-router.get("/", async (_req, res, next) => {
+router.get("/", async (req, res, next) => {
   try {
-    const products = await listarProductos();
-    res.status(200).json(products);
+    const querySchema = z.object({
+      page: z.coerce.number().int().min(1).default(1),
+      limit: z.coerce.number().int().min(1).max(100).default(10),
+    });
+
+    const resultado = querySchema.safeParse(req.query);
+
+    if (!resultado.success) {
+      res.status(400).json({
+        message: "Parámetros de paginación inválidos",
+        errors: resultado.error.issues,
+      });
+      return;
+    }
+
+    const { page, limit } = resultado.data;
+
+    const productos = await listarProductos(page, limit);
+    res.status(200).json(productos);
   } catch (error) {
     next(error);
   }
