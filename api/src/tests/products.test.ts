@@ -147,3 +147,17 @@ describe("PATCH /api/v1/products/:id", () => {
     expect(prisma.producto.update).not.toHaveBeenCalled();
   });
 });
+
+describe("Manejo de errores HTTP", () => {
+  it("debe responder 400 cuando el JSON está mal formado", async () => {
+    const response = await request(app)
+      .post("/api/v1/products")
+      .set("Content-Type", "application/json")
+      .send('{"nombre":');
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe(
+      "El cuerpo JSON de la solicitud no es válido",
+    );
+  });
+});

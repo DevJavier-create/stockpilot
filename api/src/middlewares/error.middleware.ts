@@ -7,13 +7,24 @@ export const errorMiddleware: ErrorRequestHandler = (
   res,
   next,
 ) => {
-  console.error(error);
-
   if (res.headersSent) {
     next(error);
     return;
   }
 
+  // JSON mal formado enviado por el cliente.
+  if (
+    error instanceof SyntaxError &&
+    "status" in error &&
+    error.status === 400
+  ) {
+    res.status(400).json({
+      message: "El cuerpo JSON de la solicitud no es válido",
+    });
+    return;
+  }
+
+  // SKU duplicado.
   if (
     error instanceof Prisma.PrismaClientKnownRequestError &&
     error.code === "P2002"
@@ -23,6 +34,20 @@ export const errorMiddleware: ErrorRequestHandler = (
     });
     return;
   }
+
+  // Registro relacionado que no existe.
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2025"
+  ) {
+    res.status(404).json({
+      message: "El recurso solicitado no existe",
+    });
+    return;
+  }
+
+  // No exponer detalles internos al cliente.
+  console.error("Error no controlado:", error);
 
   res.status(500).json({
     message: "Error interno del servidor",
