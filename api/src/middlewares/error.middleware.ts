@@ -19,7 +19,7 @@ export const errorMiddleware: ErrorRequestHandler = (
     error.code === "P2002"
   ) {
     res.status(409).json({
-      message: "Y existe un producto con ese SKU",
+      message: "Ya existe un producto con ese SKU",
     });
     return;
   }
