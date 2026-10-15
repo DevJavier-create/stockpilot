@@ -29,7 +29,10 @@ const actualizarProductoSchema = z
     stock: z.number().int().min(0).optional(),
     stockMinimo: z.number().int().min(0).optional(),
   })
-  .strict();
+  .strict()
+  .refine((datos) => Object.keys(datos).length > 0, {
+    message: "Debes enviar al menos un campo para actualizar",
+  });
 
 router.get("/", async (req, res, next) => {
   try {
@@ -123,16 +126,17 @@ router.patch("/:id", async (req, res, next) => {
     const resultado = actualizarProductoSchema.safeParse(req.body);
 
     if (!resultado.success) {
-      res.status(400).json({
-        message: "datos de actualizacion invalido",
-        errors: resultado.error.flatten(),
-      });
-      return;
-    }
+      const cuerpoVacio =
+        req.body !== null &&
+        typeof req.body === "object" &&
+        !Array.isArray(req.body) &&
+        Object.keys(req.body).length === 0;
 
-    if (Object.keys(resultado.data).length === 0) {
       res.status(400).json({
-        message: "Debes enviar al menos un campo para actualizar",
+        message: cuerpoVacio
+          ? "Debes enviar al menos un campo para actualizar"
+          : "Datos de actualización inválidos",
+        errors: resultado.error.flatten(),
       });
       return;
     }

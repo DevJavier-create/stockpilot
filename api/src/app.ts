@@ -4,6 +4,8 @@ import productRoutes from "./routes/products.routes.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import helmet from "helmet";
 import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import { openapi } from "./docs/openapi.js";
 
 const app: Express = express();
 
@@ -30,6 +32,7 @@ app.get("/api/v1/healt", (_req, res) => {
   });
 });
 
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(openapi));
 // Debe estar después de las rutas.
 app.use(errorMiddleware);
 
